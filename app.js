@@ -9,8 +9,8 @@ document.addEventListener('DOMContentLoaded', async () => {
     Chart.register(ChartDataLabels);
   }
 
-  // Raw dataset embedded directly for instant offline load & verified against data.json
-  const rawDataset = [
+  // Default dataset verified against Rekap_Penerimaan_2026_CLEAN (1).xlsx
+  const defaultDataset = [
     { "No Bulan": 1, "Bulan": "JANUARI", "Tahun": 2026, "Kantor": "DENPASAR", "Bea Masuk": 152617000, "Cukai Tembakau": 424586000, "Cukai MMEA": 102981160000, "Cukai Lainnya": 1730729000, "Cukai Total": 105136475000, "Total Akhir": 105289092000, "Total Kumulatif TLKV": 105289092000 },
     { "No Bulan": 2, "Bulan": "FEBRUARI", "Tahun": 2026, "Kantor": "DENPASAR", "Bea Masuk": 137137000, "Cukai Tembakau": 2343856000, "Cukai MMEA": 88352014000, "Cukai Lainnya": 926023000, "Cukai Total": 91621893000, "Total Akhir": 91759030000, "Total Kumulatif TLKV": 197048122000 },
     { "No Bulan": 3, "Bulan": "MARET", "Tahun": 2026, "Kantor": "DENPASAR", "Bea Masuk": 84529000, "Cukai Tembakau": 1700193000, "Cukai MMEA": 68235181000, "Cukai Lainnya": 938983000, "Cukai Total": 70874357000, "Total Akhir": 70958886000, "Total Kumulatif TLKV": 268007008000 },
@@ -25,7 +25,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     { "No Bulan": 12, "Bulan": "DESEMBER", "Tahun": 2026, "Kantor": "DENPASAR", "Bea Masuk": 0, "Cukai Tembakau": 0, "Cukai MMEA": 0, "Cukai Lainnya": 0, "Cukai Total": 0, "Total Akhir": 0, "Total Kumulatif TLKV": 879247028000 }
   ];
 
-  let currentData = [...rawDataset];
+  // Dynamic raw dataset (load custom uploaded data if available in localStorage)
+  let rawDataset = [...defaultDataset];
+  const savedDataStr = localStorage.getItem('djbc_custom_dataset');
+  if (savedDataStr) {
+    try {
+      const parsed = JSON.parse(savedDataStr);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        rawDataset = parsed;
+      }
+    } catch (e) {
+      console.warn('Gagal memuat dataset tersimpan:', e);
+    }
+  }
 
   // Global Filter & Sort States
   let state = {
@@ -1097,6 +1109,154 @@ document.addEventListener('DOMContentLoaded', async () => {
     link.click();
     document.body.removeChild(link);
   });
+
+  // ==========================================
+  // FITUR: UPLOAD FILE EXCEL / CSV BARU
+  // ==========================================
+  const fileInputExcel = document.getElementById('file-input-excel');
+  const btnUploadFile = document.getElementById('btn-upload-file');
+  const btnResetData = document.getElementById('btn-reset-data');
+
+  function updateResetButtonVisibility() {
+    if (!btnResetData) return;
+    const hasCustomData = !!localStorage.getItem('djbc_custom_dataset');
+    btnResetData.style.display = hasCustomData ? 'flex' : 'none';
+  }
+  updateResetButtonVisibility();
+
+  if (btnUploadFile && fileInputExcel) {
+    btnUploadFile.addEventListener('click', () => {
+      fileInputExcel.value = ''; // Reset input agar bisa re-upload file sama
+      fileInputExcel.click();
+    });
+
+    fileInputExcel.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      if (typeof XLSX === 'undefined') {
+        alert('Library pembaca Excel (SheetJS) belum termuat. Periksa koneksi internet Anda.');
+        return;
+      }
+
+      try {
+        const data = await file.arrayBuffer();
+        const workbook = XLSX.read(data, { type: 'array' });
+        
+        // Cari sheet 'DENPASAR_CLEAN' atau gunakan sheet pertama
+        let targetSheetName = workbook.SheetNames.find(s => s.toUpperCase().includes('DENPASAR')) || workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[targetSheetName];
+        const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: 0 });
+
+        if (!jsonData || jsonData.length === 0) {
+          alert('File Excel kosong atau format tidak dikenali.');
+          return;
+        }
+
+        // Helper normalisasi nama kolom
+        function findVal(row, possibleKeys) {
+          const rowKeys = Object.keys(row);
+          for (let p of possibleKeys) {
+            const foundKey = rowKeys.find(k => k.trim().toLowerCase() === p.trim().toLowerCase());
+            if (foundKey !== undefined) {
+              const val = row[foundKey];
+              return typeof val === 'number' ? val : (parseFloat(String(val).replace(/[^0-9.-]+/g, '')) || 0);
+            }
+          }
+          return 0;
+        }
+
+        function findStr(row, possibleKeys, fallback) {
+          const rowKeys = Object.keys(row);
+          for (let p of possibleKeys) {
+            const foundKey = rowKeys.find(k => k.trim().toLowerCase() === p.trim().toLowerCase());
+            if (foundKey !== undefined) {
+              return String(row[foundKey]).trim();
+            }
+          }
+          return fallback;
+        }
+
+        // Map data ke format standar
+        const standardMonths = ['JANUARI', 'FEBRUARI', 'MARET', 'APRIL', 'MEI', 'JUNI', 'JULI', 'AGUSTUS', 'SEPTEMBER', 'OKTOBER', 'NOVEMBER', 'DESEMBER'];
+        
+        const mappedData = jsonData.map((row, idx) => {
+          const noBulan = findVal(row, ['No Bulan', 'No', 'Bulan Ke', 'No.']) || (idx + 1);
+          let bulanName = findStr(row, ['Bulan', 'Month', 'Nama Bulan'], standardMonths[idx] || `BULAN ${idx + 1}`).toUpperCase();
+          const tahun = findVal(row, ['Tahun', 'Year']) || 2026;
+          const kantor = findStr(row, ['Kantor', 'KPPBC', 'KPBC'], 'DENPASAR').toUpperCase();
+
+          const bm = findVal(row, ['Bea Masuk', 'BM', 'Bea_Masuk']);
+          const ht = findVal(row, ['Cukai Tembakau', 'HT', 'Cukai_Tembakau', 'Hasil Tembakau']);
+          const mmea = findVal(row, ['Cukai MMEA', 'MMEA', 'Cukai_MMEA']);
+          const lain = findVal(row, ['Cukai Lainnya', 'Lainnya', 'Cukai_Lainnya']);
+          const cTotal = findVal(row, ['Cukai Total', 'Total Cukai', 'Cukai_Total']) || (ht + mmea + lain);
+          const tAkhir = findVal(row, ['Total Akhir', 'Total', 'Total_Akhir', 'Total Penerimaan']) || (bm + cTotal);
+          const kumulatif = findVal(row, ['Total Kumulatif TLKV', 'Kumulatif', 'Kumulatif TLKV', 'Total Kumulatif']) || tAkhir;
+
+          return {
+            "No Bulan": Number(noBulan),
+            "Bulan": bulanName,
+            "Tahun": Number(tahun),
+            "Kantor": kantor,
+            "Bea Masuk": bm,
+            "Cukai Tembakau": ht,
+            "Cukai MMEA": mmea,
+            "Cukai Lainnya": lain,
+            "Cukai Total": cTotal,
+            "Total Akhir": tAkhir,
+            "Total Kumulatif TLKV": kumulatif
+          };
+        });
+
+        // Simpan ke memory dan localStorage
+        rawDataset = mappedData;
+        localStorage.setItem('djbc_custom_dataset', JSON.stringify(mappedData));
+
+        // Update footer info jika ada
+        const footerSource = document.querySelector('.source-badge');
+        if (footerSource) {
+          footerSource.innerHTML = `
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            Data: ${file.name}
+          `;
+        }
+
+        updateResetButtonVisibility();
+        state.activeCrossMonth = null;
+        renderDashboard();
+
+        alert(`✅ File "${file.name}" berhasil diunggah!\nTotal baris data: ${mappedData.length}\nDashboard telah diperbarui secara otomatis.`);
+
+      } catch (err) {
+        console.error('Error membaca file Excel:', err);
+        alert('Terjadi kesalahan saat memproses file Excel: ' + err.message);
+      }
+    });
+  }
+
+  // Tombol Reset ke data bawaan awal
+  if (btnResetData) {
+    btnResetData.addEventListener('click', () => {
+      if (confirm('Kembalikan dashboard ke data awal Rekap 2026? Data file upload akan dihapus dari browser.')) {
+        localStorage.removeItem('djbc_custom_dataset');
+        rawDataset = [...defaultDataset];
+        updateResetButtonVisibility();
+
+        const footerSource = document.querySelector('.source-badge');
+        if (footerSource) {
+          footerSource.innerHTML = `
+            <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+            Data: Rekap_Penerimaan_2026.xlsx
+          `;
+        }
+
+        state.activeCrossMonth = null;
+        renderDashboard();
+        alert('Dashboard telah dikembalikan ke data default.');
+      }
+    });
+  }
 
   // Initial Render
   renderDashboard();
