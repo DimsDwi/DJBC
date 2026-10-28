@@ -1,0 +1,5 @@
+node_modules
+.vercel
+*.pbix
+_pbix_extracted/
+server.py

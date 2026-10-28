@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard BI Rekap Penerimaan - DJBC Bali/Nusra (OceanWave)</title>
+  
+  <!-- Google Fonts: Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Custom Stylesheet -->
+  <link rel="stylesheet" href="styles.css">
+  
+  <!-- Chart.js & Datalabels Plugin CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0/dist/chartjs-plugin-datalabels.min.js"></script>
+</head>
+<body>
+
+  <!-- Sidebar Navigation -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand-header">
+      <div class="brand-logo">
+        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <h2>DJBC BALI/NUSRA</h2>
+        <span>OceanWave BI</span>
+      </div>
+    </div>
+    
+    <ul class="nav-menu">
+      <li class="nav-item">
+        <button class="active" data-page="page-overview">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+          Executive Overview
+        </button>
+      </li>
+      <li class="nav-item">
+        <button data-page="page-analysis">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+          Analysis & Details
+        </button>
+      </li>
+      <li class="nav-item">
+        <button data-page="page-explore">
+          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+          Explore Data
+        </button>
+      </li>
+    </ul>
+
+    <div class="sidebar-footer">
+      <div class="source-badge">
+        <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+        Data: Rekap_Penerimaan_2026.xlsx
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content Wrapper -->
+  <div class="main-wrapper">
+    
+    <!-- Top Filter Header -->
+    <header class="top-bar">
+      <div class="page-title">
+        <h1 id="current-page-title">Executive Overview</h1>
+        <p id="current-page-subtitle">Monitoring Penerimaan Bea dan Cukai Tahun 2026</p>
+      </div>
+
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label for="filter-tahun">Tahun</label>
+          <select id="filter-tahun" class="filter-select">
+            <option value="ALL">Semua Tahun</option>
+            <option value="2026" selected>2026</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Bulan (Multi-select)</label>
+          <div class="multi-select-dropdown" id="dropdown-bulan">
+            <button type="button" class="filter-select multi-select-btn" id="btn-dropdown-bulan">
+              <span id="label-dropdown-bulan">Semua Bulan</span>
+              <svg width="12" height="12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+            </button>
+            <div class="multi-select-menu" id="menu-dropdown-bulan">
+              <label class="multi-select-item">
+                <input type="checkbox" value="ALL" id="chk-bulan-all" checked>
+                <span><strong>Semua Bulan</strong></span>
+              </label>
+              <hr class="dropdown-divider">
+              <label class="multi-select-item"><input type="checkbox" value="JANUARI" class="chk-bulan" checked> <span>Januari</span></label>
+              <label class="multi-select-item"><input type="checkbox" value="FEBRUARI" class="chk-bulan" checked> <span>Februari</span></label>
+              <label class="multi-select-item"><input type="checkbox" value="MARET" class="chk-bulan" checked> <span>Maret</span></label>
+              <label class="multi-select-item"><input type="checkbox" value="APRIL" class="chk-bulan" checked> <span>April</span></label>
+              <label class="multi-select-item"><input type="checkbox" value="MEI" class="chk-bulan" checked> <span>Mei</span></label>
+              <label class="multi-select-item"><input type="checkbox" value="JUNI" class="chk-bulan" checked> <span>Juni</span></label>
+              <label class="multi-select-item"><input type="checkbox" value="JULI" class="chk-bulan" checked> <span>Juli</span></label>
+              <label class="multi-select-item"><input type="checkbox" value="AGUSTUS" class="chk-bulan" checked> <span>Agustus</span></label>
+              <label class="multi-select-item"><input type="checkbox" value="SEPTEMBER" class="chk-bulan" checked> <span>September</span></label>
+              <label class="multi-select-item"><input type="checkbox" value="OKTOBER" class="chk-bulan" checked> <span>Oktober</span></label>
+              <label class="multi-select-item"><input type="checkbox" value="NOVEMBER" class="chk-bulan" checked> <span>November</span></label>
+              <label class="multi-select-item"><input type="checkbox" value="DESEMBER" class="chk-bulan" checked> <span>Desember</span></label>
+            </div>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-kantor">Kantor</label>
+          <select id="filter-kantor" class="filter-select">
+            <option value="ALL" selected>Semua Kantor</option>
+            <option value="DENPASAR">KPBC Denpasar</option>
+          </select>
+        </div>
+
+        <div class="filter-group highlight-group">
+          <label for="selector-jenis-penerimaan">⚡ Jenis Penerimaan</label>
+          <select id="selector-jenis-penerimaan" class="filter-select highlight-select">
+            <option value="Total Akhir" selected>Total Akhir</option>
+            <option value="Cukai Total">Cukai Total</option>
+            <option value="Cukai MMEA">Cukai MMEA</option>
+            <option value="Cukai Tembakau">Cukai Tembakau</option>
+            <option value="Cukai Lainnya">Cukai Lainnya</option>
+          </select>
+        </div>
+
+        <button id="btn-reset-filters" class="btn-reset">
+          <svg width="14" height="14" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+          Reset Filter
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="content-body">
+
+      <!-- ==================== PAGE 1: EXECUTIVE OVERVIEW ==================== -->
+      <section id="page-overview" class="dashboard-page active">
+        
+        <!-- KPI Cards Grid (Murni Realisasi Excel) -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Total Penerimaan</span>
+              <div class="kpi-icon">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpi-p1-total">0.0 BN</div>
+            <div class="kpi-subtext" id="kpi-p1-total-sub">Total Realisasi 2026 (100.0%)</div>
+          </div>
+
+          <div class="kpi-card highlight-mmea">
+            <div class="kpi-header">
+              <span class="kpi-title">Cukai MMEA</span>
+              <div class="kpi-icon" style="color: #38bdf8;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpi-p1-mmea">0.0 BN</div>
+            <div class="kpi-subtext" id="kpi-p1-mmea-sub">97.3% dari Total Penerimaan</div>
+          </div>
+
+          <div class="kpi-card highlight-tembakau">
+            <div class="kpi-header">
+              <span class="kpi-title">Cukai Tembakau</span>
+              <div class="kpi-icon" style="color: #f59e0b;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpi-p1-tembakau">0.0 BN</div>
+            <div class="kpi-subtext" id="kpi-p1-tembakau-sub">1.8% dari Total Penerimaan</div>
+          </div>
+
+          <div class="kpi-card highlight-lainnya">
+            <div class="kpi-header">
+              <span class="kpi-title">Cukai Lainnya</span>
+              <div class="kpi-icon" style="color: #10b981;">
+                <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 7h10M7 12h10m-5 5h5"/></svg>
+              </div>
+            </div>
+            <div class="kpi-value" id="kpi-p1-lainnya">0.0 BN</div>
+            <div class="kpi-subtext" id="kpi-p1-lainnya-sub">0.8% dari Total Penerimaan</div>
+          </div>
+        </div>
+
+        <!-- Fitur 1: Executive Summary Highlights (Fakta Aktual Excel) -->
+        <div class="executive-highlights-grid">
+          <div class="highlight-mini-card">
+            <div class="highlight-mini-icon">🏆</div>
+            <div class="highlight-mini-content">
+              <span class="highlight-mini-label">Bulan Tertinggi</span>
+              <span class="highlight-mini-value" id="hl-best-month">JUNI</span>
+              <span class="highlight-mini-sub" id="hl-best-value">137.9 BN (15.7%)</span>
+            </div>
+          </div>
+
+          <div class="highlight-mini-card">
+            <div class="highlight-mini-icon">⚠️</div>
+            <div class="highlight-mini-content">
+              <span class="highlight-mini-label">Bulan Terendah</span>
+              <span class="highlight-mini-value" id="hl-worst-month">SEPTEMBER</span>
+              <span class="highlight-mini-sub" id="hl-worst-value">22.8 BN (2.6%)</span>
+            </div>
+          </div>
+
+          <div class="highlight-mini-card">
+            <div class="highlight-mini-icon">📊</div>
+            <div class="highlight-mini-content">
+              <span class="highlight-mini-label">Rata-Rata Bulanan</span>
+              <span class="highlight-mini-value" id="hl-avg-month">97.7 BN</span>
+              <span class="highlight-mini-sub">Januari – September</span>
+            </div>
+          </div>
+
+          <div class="highlight-mini-card">
+            <div class="highlight-mini-icon">⚡</div>
+            <div class="highlight-mini-content">
+              <span class="highlight-mini-label">Kontributor Terbesar</span>
+              <span class="highlight-mini-value">CUKAI MMEA</span>
+              <span class="highlight-mini-sub" id="hl-mmea-share">855.7 BN (97.3%)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Visual Grid -->
+        <div class="charts-grid">
+          <!-- Visual 1: Trend Total Penerimaan per Bulan -->
+          <div class="chart-card col-7">
+            <div class="chart-header">
+              <div>
+                <h3>Trend Penerimaan per Bulan</h3>
+                <p id="trend-subtitle">Tren realisasi penerimaan bulanan tahun 2026</p>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-p1-trend"></canvas>
+            </div>
+          </div>
+
+          <!-- Visual 2: Penerimaan per Bulan (Bar Chart) -->
+          <div class="chart-card col-5">
+            <div class="chart-header">
+              <div>
+                <h3>Penerimaan per Bulan</h3>
+                <p>Perbandingan nominal per bulan</p>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-p1-bar"></canvas>
+            </div>
+          </div>
+
+          <!-- Visual 3: Akumulasi Penerimaan Berjalan YTD (Kolom Total Kumulatif TLKV Asli Excel) -->
+          <div class="chart-card col-12">
+            <div class="chart-header">
+              <div>
+                <h3>Akumulasi Penerimaan Berjalan (YTD)</h3>
+                <p>Pertumbuhan akumulatif penerimaan sepanjang tahun 2026 (berdasarkan kolom Total Kumulatif TLKV)</p>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-p1-kumulatif"></canvas>
+            </div>
+          </div>
+
+          <!-- Visual 4: Tabel Detail Overview -->
+          <div class="table-card col-12">
+            <div class="chart-header">
+              <div>
+                <h3>Tabel Detail Overview (Klik Header untuk Sortir)</h3>
+                <p>Rincian realisasi penerimaan menurut komponen utama per bulan dengan Data-Bars Kontribusi</p>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="custom-table" id="table-p1-detail">
+                <thead>
+                  <tr>
+                    <th class="sortable" data-sort="Bulan">Bulan</th>
+                    <th class="num sortable" data-sort="Bea Masuk">Bea Masuk</th>
+                    <th class="num sortable" data-sort="Cukai MMEA">Cukai MMEA</th>
+                    <th class="num sortable" data-sort="Cukai Tembakau">Cukai Tembakau</th>
+                    <th class="num sortable" data-sort="Cukai Lainnya">Cukai Lainnya</th>
+                    <th class="num sortable" data-sort="Cukai Total">Cukai Total</th>
+                    <th class="num sortable" data-sort="Total Akhir">Total Akhir</th>
+                    <th class="num sortable" data-sort="pctShare">% Kontribusi</th>
+                    <th class="num sortable" data-sort="mom">Growth MoM (%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Populated by app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ==================== PAGE 2: ANALYSIS / DETAIL ==================== -->
+      <section id="page-analysis" class="dashboard-page">
+        
+        <!-- KPI Cards Grid Page 2 -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-header">
+              <span class="kpi-title">Total Penerimaan</span>
+              <div class="kpi-icon"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg></div>
+            </div>
+            <div class="kpi-value" id="kpi-p2-total">0.0 BN</div>
+            <div class="kpi-subtext" id="kpi-p2-total-sub">Realisasi Penerimaan Filtered</div>
+          </div>
+
+          <div class="kpi-card highlight-mmea">
+            <div class="kpi-header">
+              <span class="kpi-title">Cukai MMEA</span>
+              <div class="kpi-icon" style="color: #38bdf8;"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg></div>
+            </div>
+            <div class="kpi-value" id="kpi-p2-mmea">0.0 BN</div>
+            <div class="kpi-subtext" id="kpi-p2-mmea-sub">Cukai MMEA Filtered</div>
+          </div>
+
+          <div class="kpi-card highlight-tembakau">
+            <div class="kpi-header">
+              <span class="kpi-title">Cukai Tembakau</span>
+              <div class="kpi-icon" style="color: #f59e0b;"><svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 18.657A8 8 0 016.343 7.343S7 9 9 10c0-2 .5-5 2.986-7C14 5 16.09 5.777 17.656 7.343A7.975 7.975 0 0120 13a7.975 7.975 0 01-2.343 5.657z"/></svg></div>
+            </div>
+            <div class="kpi-value" id="kpi-p2-tembakau">0.0 BN</div>
+            <div class="kpi-subtext" id="kpi-p2-tembakau-sub">Cukai Tembakau Filtered</div>
+          </div>
+        </div>
+
+        <!-- Visual Grid Page 2 -->
+        <div class="charts-grid">
+          <!-- Visual 1: Trend Cukai 2026 (Line Chart with Parameter Selector) -->
+          <div class="chart-card col-7">
+            <div class="chart-header">
+              <div>
+                <h3 id="p2-trend-title">Trend Cukai 2026</h3>
+                <p id="p2-trend-subtitle">Dinamis berdasarkan parameter Jenis Penerimaan yang dipilih</p>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-p2-trend"></canvas>
+            </div>
+          </div>
+
+          <!-- Visual 2: Komposisi Penerimaan 2026 (Donut Chart) -->
+          <div class="chart-card col-5">
+            <div class="chart-header">
+              <div>
+                <h3>Komposisi Penerimaan 2026</h3>
+                <p id="p2-donut-subtitle">Komposisi Penerimaan 2026 — Keseluruhan</p>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-p2-donut"></canvas>
+            </div>
+          </div>
+
+          <!-- Visual 3: Perubahan Penerimaan per Bulan (% MoM Column Chart) -->
+          <div class="chart-card col-12">
+            <div class="chart-header">
+              <div>
+                <h3>Perubahan Penerimaan per Bulan</h3>
+                <p>Persentase perubahan terhadap bulan sebelumnya (% Month-over-Month)</p>
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-p2-mom"></canvas>
+            </div>
+          </div>
+
+          <!-- Visual 4: Tabel Detail Page 2 -->
+          <div class="table-card col-12">
+            <div class="chart-header">
+              <div>
+                <h3>Tabel Detail Analisis (Klik Header untuk Sortir)</h3>
+                <p>Rincian penerimaan lengkap per bulan dengan perhitungan MoM & Data-Bars</p>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="custom-table" id="table-p2-detail">
+                <thead>
+                  <tr>
+                    <th class="sortable" data-sort="Bulan">Bulan</th>
+                    <th class="num sortable" data-sort="Cukai MMEA">Cukai MMEA</th>
+                    <th class="num sortable" data-sort="Cukai Tembakau">Cukai Tembakau</th>
+                    <th class="num sortable" data-sort="Cukai Lainnya">Cukai Lainnya</th>
+                    <th class="num sortable" data-sort="Cukai Total">Cukai Total</th>
+                    <th class="num sortable" data-sort="Total Akhir">Total Akhir</th>
+                    <th class="num sortable" data-sort="pctShare">% Share</th>
+                    <th class="num sortable" data-sort="mom">Growth MoM (%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Populated by app.js -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+      </section>
+
+
+      <!-- ==================== PAGE 3: EXPLORE DATA ==================== -->
+      <section id="page-explore" class="dashboard-page">
+        
+        <div class="explore-toolbar">
+          <div class="search-box">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input type="text" id="search-input" placeholder="Cari bulan, kantor, nominal...">
+          </div>
+
+          <button id="btn-export-csv" class="btn-export">
+            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+            Unduh Data CSV / Excel
+          </button>
+        </div>
+
+        <div class="table-card">
+          <div class="chart-header">
+            <div>
+              <h3>Data Mentah Record Penerimaan (DENPASAR_CLEAN)</h3>
+              <p>Menampilkan data aktual lengkap dari file Rekap_Penerimaan_2026_CLEAN.xlsx</p>
+            </div>
+          </div>
+          <div class="table-responsive">
+            <table class="custom-table" id="table-p3-raw">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Bulan</th>
+                  <th>Tahun</th>
+                  <th>Kantor</th>
+                  <th class="num">Bea Masuk (IDR)</th>
+                  <th class="num">Cukai Tembakau (IDR)</th>
+                  <th class="num">Cukai MMEA (IDR)</th>
+                  <th class="num">Cukai Lainnya (IDR)</th>
+                  <th class="num">Cukai Total (IDR)</th>
+                  <th class="num">Total Akhir (IDR)</th>
+                  <th class="num">Kumulatif (IDR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <!-- Populated by app.js -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Main JS Logic -->
+  <script src="app.js"></script>
+</body>
+</html>
